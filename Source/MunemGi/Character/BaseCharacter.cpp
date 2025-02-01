@@ -4,7 +4,6 @@
 #include "BaseCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "MunemGi/Features/BasePlane.h"
 #include "MunemGi/Gameplay/BaseController.h"
 #include "Net/UnrealNetwork.h"
 
@@ -31,9 +30,11 @@ void ABaseCharacter::BeginPlay()
 	}
 	FTimerHandle ZoneTimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(ZoneTimerHandle, this, &ABaseCharacter::DamagePlayerIfNotInZone, 0.1f, true);
-
-	SetTPCamera();
+	
+	SetTPCameraSrv();
+	UE_LOG(LogTemp, Warning, TEXT("Set to TP camera on begin play"));
 	StopSprint();
+	UE_LOG(LogTemp, Warning, TEXT("Set to walking"));
 }
 
 // Called every frame
@@ -114,13 +115,15 @@ void ABaseCharacter::Sprint()
 		if (!bPlayerIsSprinting)
 		{
 			bPlayerIsSprinting = true;	
-			MovementComponentPointer->MaxWalkSpeed = SprintSpeed;	
+			MovementComponentPointer->MaxWalkSpeed = SprintSpeed;
+			UE_LOG(LogTemp, Warning, TEXT("Sprinting"));
 		}
-		else
-		{
-			bPlayerIsSprinting = false;	
-			MovementComponentPointer->MaxWalkSpeed = WalkSpeed;
-		}
+		// else
+		// {
+		// 	bPlayerIsSprinting = false;	
+		// 	MovementComponentPointer->MaxWalkSpeed = WalkSpeed;
+		// 	UE_LOG(LogTemp, Warning, TEXT("Not sprinting"));
+		// }
 	}
 }
 
@@ -131,6 +134,7 @@ void ABaseCharacter::StopSprint()
 	{
 		bPlayerIsSprinting = false;	
 		MovementComponentPointer->MaxWalkSpeed = WalkSpeed;
+		UE_LOG(LogTemp, Warning, TEXT("Not sprinting on stop sprinting"));
 	}
 }
 
@@ -138,24 +142,39 @@ void ABaseCharacter::ChangeCameraMode()
 {
 	if(bIsTPCamera)
 	{
-		SetFPCamera();
+		SetFPCameraSrv();
 	}
 	else
 	{
-		SetTPCamera();
+		SetTPCameraSrv();
 	}
 }
 
-void ABaseCharacter::SetTPCamera()
+void ABaseCharacter::SetTPCameraClt()
 {
 	PlayerCameraSpringArm->TargetArmLength = 250.0f;
 	bIsTPCamera = true;
 }
 
-void ABaseCharacter::SetFPCamera()
+void ABaseCharacter::SetFPCameraClt()
 {
 	PlayerCameraSpringArm->TargetArmLength = 0.0f;
 	bIsTPCamera = false;
+}
+
+void ABaseCharacter::SetFPCameraSrv_Implementation()
+{
+	PlayerCameraSpringArm->TargetArmLength = 0.0f;
+	bIsTPCamera = false;
+	SetFPCameraClt();
+}
+
+void ABaseCharacter::SetTPCameraSrv_Implementation()
+{
+	PlayerCameraSpringArm->TargetArmLength = 250.0f;
+	bIsTPCamera = true;
+	UE_LOG(LogTemp, Warning, TEXT("Set to TP camera"));
+	SetTPCameraClt();
 }
 
 void ABaseCharacter::Mlt_PlayerLanded_Implementation()
@@ -202,6 +221,8 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ABaseCharacter, bIsInZone);
+	DOREPLIFETIME(ABaseCharacter, bPlayerIsSprinting);
+	DOREPLIFETIME(ABaseCharacter, bIsTPCamera);
 	DOREPLIFETIME(ABaseCharacter, CurrentHealth);
 	DOREPLIFETIME(ABaseCharacter, bIsAlive);
 	DOREPLIFETIME(ABaseCharacter, CurrentlyEquippedItem);

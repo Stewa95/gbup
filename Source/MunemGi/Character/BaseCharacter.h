@@ -82,7 +82,7 @@ protected:
 	void StopSprint();
 	void ChangeCameraMode();
 
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta = (AllowPrivateAcces = true))
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta = (AllowPrivateAcces = true), Replicated)
 	bool bPlayerIsSprinting = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -120,8 +120,16 @@ protected:
 	UFUNCTION(NetMulticast, Unreliable)
 	void Mlt_PlayerLanded();
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated)
 	bool bIsTPCamera = false;
 
-	void SetTPCamera();
-	void SetFPCamera();
+	UFUNCTION(Server, Unreliable)
+	void SetTPCameraSrv();
+
+	void SetTPCameraClt();
+	
+	UFUNCTION(Server, Unreliable)
+	void SetFPCameraSrv();
+
+	void SetFPCameraClt();
 };
